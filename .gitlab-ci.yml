@@ -1,0 +1,22 @@
+stages:
+    - lint
+    - build
+
+image: golang:1
+
+govet:
+    stage: lint
+    script:
+        - go vet client.go
+        - go vet server.go
+
+build:
+    stage: build
+    script:
+        - go build client.go
+        - go build server.go
+    artifacts:
+        paths:
+            - ./client
+            - ./server
+        expire_in: "1 month"
