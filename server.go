@@ -56,7 +56,7 @@ func handleRealClient(realClient net.Conn) {
 		log.Printf("could not accept a puppet connection: %s", err)
 		return
 	}
-	log.Printf("accepted puppet client %s", puppetClient)
+	log.Printf("accepted puppet client %s", puppetClient.RemoteAddr().String())
 
 	go copyTo(puppetClient, realClient)
 	copyTo(realClient, puppetClient)
@@ -108,7 +108,7 @@ func main() {
 			log.Printf("oops accepting real client %s", err)
 			continue
 		}
-		log.Printf("accepted real client %s", realClient)
+		log.Printf("accepted real client %s", realClient.RemoteAddr().String())
 
 		go handleRealClient(realClient)
 	}
