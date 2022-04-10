@@ -38,7 +38,7 @@ func copyTo(from, to net.Conn) {
 	}
 }
 
-func listenPuppetConnections(wanted <-chan bool, connections chan<-net.Conn) {
+func listenPuppetConnections(wanted <-chan bool, connections chan<- net.Conn) {
 	for _ = range wanted {
 		puppetListener, err := net.Listen("tcp", *puppetAddress)
 		if err != nil {
@@ -119,7 +119,7 @@ func main() {
 		log.Printf("accepted real client %s", realClient.RemoteAddr().String())
 
 		puppetWanted <- true
-		puppetClient := <- puppetConnections
+		puppetClient := <-puppetConnections
 		go handleRealClient(realClient, puppetClient)
 	}
 }
