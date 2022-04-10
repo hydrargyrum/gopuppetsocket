@@ -23,8 +23,6 @@ func copyTo(from, to net.Conn) {
 			return
 		}
 
-		log.Printf("read %d bytes", nread)
-
 		subbuf := buf[:nread]
 
 		for len(subbuf) > 0 {
@@ -35,7 +33,6 @@ func copyTo(from, to net.Conn) {
 				return
 			}
 
-			log.Printf("wrote %d bytes", nwrite)
 			subbuf = subbuf[nwrite:]
 		}
 	}
