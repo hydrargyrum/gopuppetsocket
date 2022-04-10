@@ -41,22 +41,28 @@ func copyTo(from, to net.Conn) {
 	}
 }
 
-func handleRealClient(realClient net.Conn) {
+func listenPuppetConnections(wanted <-chan bool, connections chan<-net.Conn) {
+	for _ = range wanted {
+		puppetListener, err := net.Listen("tcp", *puppetAddress)
+		if err != nil {
+			log.Printf("could not listen for puppet clients: %s", err)
+			return
+		}
+
+		puppetClient, err := puppetListener.Accept()
+		puppetListener.Close()
+		if err != nil {
+			log.Printf("could not accept a puppet connection: %s", err)
+			continue
+		}
+		log.Printf("accepted puppet client %s", puppetClient.RemoteAddr().String())
+		connections <- puppetClient
+	}
+}
+
+func handleRealClient(realClient, puppetClient net.Conn) {
 	defer realClient.Close()
-
-	puppetListener, err := net.Listen("tcp", *puppetAddress)
-	if err != nil {
-		log.Printf("could not listen for puppet clients: %s", err)
-		return
-	}
-
-	puppetClient, err := puppetListener.Accept()
-	puppetListener.Close()
-	if err != nil {
-		log.Printf("could not accept a puppet connection: %s", err)
-		return
-	}
-	log.Printf("accepted puppet client %s", puppetClient.RemoteAddr().String())
+	defer puppetClient.Close()
 
 	go copyTo(puppetClient, realClient)
 	copyTo(realClient, puppetClient)
@@ -102,6 +108,11 @@ func main() {
 		log.Fatalf("could not listen for real clients: %s", err)
 	}
 
+	puppetWanted := make(chan bool)
+	puppetConnections := make(chan net.Conn)
+
+	go listenPuppetConnections(puppetWanted, puppetConnections)
+
 	for {
 		realClient, err := realListener.Accept()
 		if err != nil {
@@ -110,6 +121,8 @@ func main() {
 		}
 		log.Printf("accepted real client %s", realClient.RemoteAddr().String())
 
-		go handleRealClient(realClient)
+		puppetWanted <- true
+		puppetClient := <- puppetConnections
+		go handleRealClient(realClient, puppetClient)
 	}
 }
