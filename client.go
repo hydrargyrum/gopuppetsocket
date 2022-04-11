@@ -48,17 +48,25 @@ func checkAddr(addr string, label string) {
 	}
 }
 
+var logEveryNs = time.Duration(5 * 1_000_000_000)
+var connectWaitNs = time.Duration(1_000_000_000)
+
 func main() {
 	flag.Parse()
 
 	checkAddr(*realAddress, "real server")
 	checkAddr(*puppetAddress, "puppet server")
 
+	ticker := time.Now()
+
 	for {
 		puppetServer, err := net.Dial("tcp", *puppetAddress)
 		if err != nil {
-			log.Printf("could not connect to puppet server: %s", err)
-			time.Sleep(time.Duration(1000 * 1000 * 1000))
+			if time.Since(ticker) > logEveryNs {
+				log.Printf("could not connect to puppet server: %s", err)
+				ticker = time.Now()
+			}
+			time.Sleep(connectWaitNs)
 			continue
 		}
 		log.Printf("connected to puppet server")
