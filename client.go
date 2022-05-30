@@ -9,6 +9,7 @@ import "net"
 
 var realAddress = flag.String("real", "", "ADDRESS:PORT of the real end server that should be reached")
 var puppetAddress = flag.String("puppet", "", "ADDRESS:PORT of the puppet server")
+var canWaitLonger = flag.Bool("can-wait-longer", false, "wait 1 minute between connects if no puppet connection for 24 hours")
 
 func copyTo(from, to net.Conn) {
 	buf := make([]byte, 1024)
@@ -71,7 +72,7 @@ func main() {
 				ticker = time.Now()
 			}
 
-			if time.Since(lastConnected) >= delayAfterNs {
+			if *canWaitLonger && time.Since(lastConnected) >= delayAfterNs {
 				time.Sleep(connectLongWaitNs)
 			} else {
 				time.Sleep(connectWaitNs)
