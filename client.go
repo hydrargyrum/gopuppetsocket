@@ -50,6 +50,8 @@ func checkAddr(addr string, label string) {
 
 var logEveryNs = time.Duration(5 * 1_000_000_000)
 var connectWaitNs = time.Duration(1_000_000_000)
+var connectLongWaitNs = time.Duration(60 * 1_000_000_000)
+var delayAfterNs = time.Duration(24 * 60 * 60 * 1_000_000_000)
 
 func main() {
 	flag.Parse()
@@ -59,6 +61,8 @@ func main() {
 
 	ticker := time.Now()
 
+	lastConnected := time.Now()
+
 	for {
 		puppetServer, err := net.Dial("tcp", *puppetAddress)
 		if err != nil {
@@ -66,10 +70,18 @@ func main() {
 				log.Printf("could not connect to puppet server: %s", err)
 				ticker = time.Now()
 			}
-			time.Sleep(connectWaitNs)
+
+			if time.Since(lastConnected) >= delayAfterNs {
+				time.Sleep(connectLongWaitNs)
+			} else {
+				time.Sleep(connectWaitNs)
+			}
+
 			continue
 		}
 		log.Printf("connected to puppet server")
+
+		lastConnected = time.Now()
 
 		realServer, err := net.Dial("tcp", *realAddress)
 		if err != nil {
