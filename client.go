@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: WTFPL
+
 package main
 
 import "flag"
