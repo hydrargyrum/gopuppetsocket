@@ -54,7 +54,7 @@ func listenPuppetConnections(wanted <-chan bool, connections chan<- net.Conn) {
 			log.Printf("could not accept a puppet connection: %s", err)
 			continue
 		}
-		log.Printf("accepted puppet client %s", puppetClient.RemoteAddr().String())
+		log.Printf("accepted puppet client %v (on %v)", puppetClient.RemoteAddr(), puppetClient.LocalAddr())
 		connections <- puppetClient
 	}
 }
@@ -62,6 +62,8 @@ func listenPuppetConnections(wanted <-chan bool, connections chan<- net.Conn) {
 func handleRealClient(realClient, puppetClient net.Conn) {
 	defer realClient.Close()
 	defer puppetClient.Close()
+
+	log.Printf("bridging real client %v with puppet client %v", realClient.RemoteAddr(), puppetClient.RemoteAddr())
 
 	go copyTo(puppetClient, realClient)
 	copyTo(realClient, puppetClient)
@@ -118,7 +120,7 @@ func main() {
 			log.Printf("oops accepting real client %s", err)
 			continue
 		}
-		log.Printf("accepted real client %s", realClient.RemoteAddr().String())
+		log.Printf("accepted real client %v (on %v)", realClient.RemoteAddr(), realClient.LocalAddr())
 
 		puppetWanted <- true
 		puppetClient := <-puppetConnections

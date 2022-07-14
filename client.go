@@ -82,7 +82,7 @@ func main() {
 
 			continue
 		}
-		log.Printf("connected to puppet server")
+		log.Printf("connected to puppet server %v", puppetServer.RemoteAddr())
 
 		lastConnected = time.Now()
 
@@ -92,7 +92,7 @@ func main() {
 			puppetServer.Close()
 			continue
 		}
-		log.Printf("connected to real client")
+		log.Printf("connected to real server %v, bridging to puppet server %v", realServer.RemoteAddr(), puppetServer.RemoteAddr())
 
 		go copyTo(puppetServer, realServer)
 		go copyTo(realServer, puppetServer)
