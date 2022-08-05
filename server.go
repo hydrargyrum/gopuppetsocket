@@ -41,7 +41,7 @@ func copyTo(from, to net.Conn) {
 }
 
 func listenPuppetConnections(wanted <-chan bool, connections chan<- net.Conn) {
-	for _ = range wanted {
+	for range wanted {
 		puppetListener, err := net.Listen("tcp", *puppetAddress)
 		if err != nil {
 			log.Printf("could not listen for puppet clients: %s", err)
