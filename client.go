@@ -12,6 +12,7 @@ import "net"
 var realAddress = flag.String("real", "", "ADDRESS:PORT of the real end server that should be reached")
 var puppetAddress = flag.String("puppet", "", "ADDRESS:PORT of the puppet server")
 var canWaitLonger = flag.Bool("can-wait-longer", false, "wait 1 minute between connects if no puppet connection for 24 hours")
+var checkAddrLater = flag.Bool("check-addr-later", false, "don't check addresses at start (start client even if network is down)")
 
 func copyTo(from, to net.Conn) {
 	buf := make([]byte, 1024)
@@ -46,6 +47,9 @@ func checkAddr(addr string, label string) {
 		os.Exit(1)
 	}
 
+	if (*checkAddrLater) {
+		return
+	}
 	if _, err := net.ResolveTCPAddr("tcp", addr); err != nil {
 		log.Fatalf("could not resolve %s address: %s", label, err)
 	}
