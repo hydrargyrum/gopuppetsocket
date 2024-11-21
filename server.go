@@ -10,9 +10,11 @@ import "log"
 import "os"
 import "net"
 import "strconv"
+import "sync"
 
 var realAddress = flag.String("real", "", "ADDRESS:PORT on which to listen connections from a real client")
 var puppetAddress = flag.String("puppet", "", "ADDRESS:PORT on which to listen for the puppet client")
+var singleConn = flag.Bool("single", false, "stop listening after a single linking puppet client to client")
 
 func copyTo(from, to net.Conn) {
 	buf := make([]byte, 1024)
@@ -59,7 +61,8 @@ func listenPuppetConnections(wanted <-chan bool, connections chan<- net.Conn) {
 	}
 }
 
-func handleRealClient(realClient, puppetClient net.Conn) {
+func handleRealClient(realClient, puppetClient net.Conn, wg *sync.WaitGroup) {
+	defer wg.Done()
 	defer realClient.Close()
 	defer puppetClient.Close()
 
@@ -100,6 +103,7 @@ func checkAddr(addr string, label string) string {
 
 func main() {
 	flag.Parse()
+	var wg sync.WaitGroup
 
 	*realAddress = checkAddr(*realAddress, "real")
 	*puppetAddress = checkAddr(*puppetAddress, "puppet")
@@ -122,8 +126,14 @@ func main() {
 		}
 		log.Printf("accepted real client %v (on %v)", realClient.RemoteAddr(), realClient.LocalAddr())
 
+		wg.Add(1)
 		puppetWanted <- true
 		puppetClient := <-puppetConnections
-		go handleRealClient(realClient, puppetClient)
+		go handleRealClient(realClient, puppetClient, &wg)
+
+		if (*singleConn) {
+			break
+		}
 	}
+	wg.Wait()
 }
